@@ -1,6 +1,6 @@
-# Website – Astro Projekt
+# Website – Astro Project
 
-Die Schatz-Website als modernes Astro-Projekt.
+Modern Astro-based website implementation.
 
 ## Setup
 
@@ -26,6 +26,6 @@ website/
 
 ## Development
 
-Die Website wird später basierend auf den Design-Ergebnissen entwickelt.
+The website will be developed based on the design specifications documented in this repository.
 
-**Weitere Infos:** siehe [Projekt-README](../README.md)
+**More info:** See [Project README](../README.md)

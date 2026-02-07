@@ -28,33 +28,31 @@
 
 ---
 
-## Kollaborations-Links
+## Collaboration Links
 
-**Shared with:** [Team-Mitglieder]
+**Access:** Figma workspace links will be added when design files are created
 
-**Permissions:** [View/Edit/Admin]
+**Permissions:** To be configured per collaborator
 
 ---
 
 ## Version History
 
-| Version | Datum | Notizen |
-|---------|-------|---------|
-| v1.0 | | |
-| v1.1 | | |
+| Version | Date | Notes |
+|---------|------|-------|
+| v1.0 | TBD | Initial wireframes |
+| v1.1 | TBD | High-fidelity mockups |
 
 ---
 
-## Aktuelle Arbeitsitems
+## Current Work Items
 
-- [ ] 
-- [ ] 
-- [ ] 
+- [ ] Create initial wireframe files in Figma
+- [ ] Develop component library
+- [ ] Build interactive prototypes
 
 ---
 
-## Zugang
+## Access
 
-**Figma Account:** [Deine Email]
-
-**Team:** [Team-Name]
+Figma workspace credentials managed by repository owner (@finnflow)

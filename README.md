@@ -1,6 +1,6 @@
-# Schatz Website – Design & Documentation Repository
+# Private Practice Website – Design & Documentation Repository
 
-Professional private practice website for nutritional counseling and energetic healing services.
+Professional website for a private practice offering nutritional counseling and energetic healing services.
 
 ## Project Overview
 

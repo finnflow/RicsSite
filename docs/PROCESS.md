@@ -162,8 +162,8 @@ Each phase must pass these gates before proceeding:
 
 ## Contact for Engineering Questions
 
-**Stakeholder:** Schatz (via contact form or direct email TBD)
-**Repository Owner:** [Your Name/GitHub Handle]
+**Stakeholder:** Contact via GitHub issues or repository owner
+**Repository Owner:** @finnflow
 
 ---
 
