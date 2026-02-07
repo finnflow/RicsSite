@@ -13,16 +13,17 @@
 **Goal:** Stabilize component architecture before content migration.
 
 **Prerequisites:**
-- Astro project initialized (`website/` directory)
+- Vite + React + TypeScript project initialized (`website/` directory)
 - Design tokens finalized (colors, typography, spacing)
-- Component library structure defined
+- Component library structure defined (React components)
 
 **Tasks:**
 1. Lock desktop UI components (no structural changes after this point)
-2. Build component library matching wireframe v1.2 structure
-3. Implement design system tokens (CSS variables / Tailwind config)
-4. Create page templates matching 6 core pages
+2. Build React component library matching wireframe v1.2 structure
+3. Implement design system tokens (Tailwind config + CSS variables)
+4. Create page components matching 6 core pages (React Router routes)
 5. Ensure component reusability (Button, Card, Form, Navigation)
+6. Set up TypeScript types for props and state
 
 **QA Gate:**
 - Desktop layouts pixel-perfect match to approved wireframes
@@ -37,15 +38,16 @@
 **Why:** Enables stakeholder to refine copy independently without code changes.
 
 **Approach:**
-- Option 1: Local JSON/Markdown files (simple, version-controlled)
+- Option 1: Local JSON files (simple, version-controlled, TypeScript types)
 - Option 2: Headless CMS (Sanity/Contentful, requires setup)
-- **Recommendation:** Start with Markdown files per page, migrate to CMS if needed
+- **Recommendation:** Start with JSON per page, use TypeScript interfaces for type safety
 
 **Tasks:**
-1. Extract all page content to structured data files
-2. Build content rendering layer in Astro
-3. Document content editing process for stakeholder
-4. Test content updates don't break layouts
+1. Extract all page content to structured JSON files
+2. Build content rendering layer (React components consuming JSON)
+3. Create TypeScript interfaces for content structure
+4. Document content editing process for stakeholder
+5. Test content updates don't break layouts
 
 **QA Gate:**
 - Content changes require zero code changes
@@ -82,11 +84,17 @@
 - Privacy policy & legal pages complete
 
 **Tasks:**
-1. Choose hosting provider (Netlify/Vercel recommended for Astro)
+1. Choose hosting provider (Netlify/Vercel recommended for Vite + React SPAs)
 2. Configure CI/CD pipeline (auto-deploy on main branch)
 3. Set up monitoring (uptime, errors, form submissions)
-4. Final stakeholder approval on staging environment
-5. Deploy to production
+4. Configure environment variables (.env for API keys)
+5. Final stakeholder approval on staging environment
+6. Deploy to production
+
+**SEO v2 Upgrade (Post-Launch):**
+- Evaluate prerendering options (Vite SSG plugins or migration to Next.js/Remix)
+- Keep client area as SPA (requires authentication, no SEO needed)
+- Prerender public pages for better SEO (home, services, contact)
 
 **QA Gate:**
 - Desktop experience unchanged from approved wireframes

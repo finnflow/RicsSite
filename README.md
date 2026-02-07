@@ -8,12 +8,20 @@ This repository contains the complete design process documentation, from discove
 
 **Current Status:** Phase 2 complete (Stakeholder Review v1.2 approved), ready for engineering handoff.
 
-## Tech Stack (Planned)
+## Tech Stack
 
-- **Framework:** Astro (static site generator)
-- **Styling:** TailwindCSS (to be configured)
+### Current Stack (Launch v1)
+- **Build Tool:** Vite
+- **Framework:** React 18 + TypeScript
+- **Routing:** React Router
+- **Styling:** TailwindCSS
+- **Animation:** Framer Motion
 - **Package Manager:** npm
-- **Hosting:** TBD
+- **Hosting:** TBD (Netlify/Vercel recommended)
+
+### Planned Upgrade (SEO v2)
+- **Public Pages:** Prerender/SSG for SEO optimization
+- **Client Area:** Remains SPA (authentication required)
 
 ## Repository Structure
 
@@ -51,16 +59,17 @@ RicsSite/
 └── website/            # Future Astro implementation (currently empty)
 ```
 
-## Quick Start (For Future Development)
+## Quick Start (For Development)
 
-Once the Astro project is initialized:
+Once the Vite project is initialized:
 
 ```bash
 cd website
 npm install
-npm run dev       # Start local dev server
-npm run build     # Build for production
+npm run dev       # Start Vite dev server (http://localhost:5173)
+npm run build     # Build for production (TypeScript check + Vite build)
 npm run preview   # Preview production build
+npm run lint      # ESLint check
 ```
 
 ## Website Architecture (6 Core Pages)
