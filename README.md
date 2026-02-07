@@ -1,4 +1,4 @@
-# Schatz Website – Design & Documentation Repository
+# Lebensessenz Website – Design & Documentation Repository
 
 Professional private practice website for nutritional counseling and energetic healing services.
 
