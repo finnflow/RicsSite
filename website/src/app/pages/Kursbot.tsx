@@ -1,8 +1,8 @@
 import { Header } from '@/app/components/Header'
-import { Footer } from '@/app/components/Footer'
 import { Send, Plus, MoreVertical } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
+import { sendChatMessage } from '@/lib/api/kursbotClient'
 
 interface Message {
   id: string
@@ -18,13 +18,31 @@ interface ChatHistory {
   timestamp: string
 }
 
+const GUEST_ID_KEY = 'lebensessenz_guest_id'
+
+function getOrCreateGuestId(): string {
+  const existing = localStorage.getItem(GUEST_ID_KEY)
+  if (existing) return existing
+  const newId = crypto.randomUUID()
+  localStorage.setItem(GUEST_ID_KEY, newId)
+  return newId
+}
+
 export default function Kursbot() {
   const navigate = useNavigate()
+  const [guestId, setGuestId] = useState<string | null>(null)
+  const [conversationId, setConversationId] = useState<string | null>(null)
   const [inputValue, setInputValue] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  // Demo chat history
+  // Initialise guestId once on mount
+  useEffect(() => {
+    setGuestId(getOrCreateGuestId())
+  }, [])
+
+  // Demo chat history (UI-only, not wired to backend)
   const chatHistory: ChatHistory[] = [
     {
       id: '1',
@@ -55,30 +73,42 @@ export default function Kursbot() {
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!inputValue.trim()) return
+    if (!inputValue.trim() || !guestId || isLoading) return
 
-    // Add user message
+    // Optimistic: show user message immediately
     const userMessage: Message = {
       id: Date.now().toString(),
       content: inputValue,
       isBot: false,
       timestamp: new Date(),
     }
+    setMessages((prev) => [...prev, userMessage])
 
-    setMessages([...messages, userMessage])
+    const currentInput = inputValue
     setInputValue('')
+    setIsLoading(true)
+    setError(null)
 
-    // Simulate bot response
-    setTimeout(() => {
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content:
-          'Danke für deine Frage! Ich bin ein Demo-Bot und kann dir bei Fragen zum Kursmaterial helfen. In der echten Version würde ich detaillierte Antworten basierend auf den Kursinhalten geben.',
-        isBot: true,
-        timestamp: new Date(),
-      }
-      setMessages((prev) => [...prev, botMessage])
-    }, 1000)
+    sendChatMessage({ message: currentInput, guestId, conversationId })
+      .then((response) => {
+        setConversationId(response.conversationId)
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            content: response.answer,
+            isBot: true,
+            timestamp: new Date(),
+          },
+        ])
+      })
+      .catch((err: unknown) => {
+        console.error('[Kursbot] API error:', err)
+        setError('Da ist etwas schiefgelaufen. Bitte versuch es später noch einmal.')
+      })
+      .finally(() => {
+        setIsLoading(false)
+      })
   }
 
   return (
@@ -87,10 +117,8 @@ export default function Kursbot() {
 
       <main className="pt-20 flex-1 flex">
         <div className="flex w-full max-w-[1800px] mx-auto">
-          {/* Sidebar - Chat History (Desktop only) */}
-          <aside
-            className={`hidden lg:flex w-64 border-r border-gray-200 bg-[#FBF8F3] flex-col ${isSidebarOpen ? '' : 'hidden'}`}
-          >
+          {/* Sidebar – Chat History (Desktop only) */}
+          <aside className="hidden lg:flex w-64 border-r border-gray-200 bg-[#FBF8F3] flex-col">
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-medium text-gray-900">Lebensessenzen</h2>
@@ -183,6 +211,15 @@ export default function Kursbot() {
                       </div>
                     </div>
                   ))}
+
+                  {/* Loading indicator */}
+                  {isLoading && (
+                    <div className="flex justify-start">
+                      <div className="bg-gradient-to-br from-[#F5EDE4] to-[#FAF3EC] rounded-2xl px-6 py-4">
+                        <p className="text-sm text-gray-500 italic">Bot denkt…</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -197,7 +234,8 @@ export default function Kursbot() {
                       onChange={(e) => setInputValue(e.target.value)}
                       placeholder="Stelle eine Frage..."
                       rows={1}
-                      className="w-full px-4 py-3 pr-12 rounded-2xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A88C] focus:border-transparent resize-none"
+                      disabled={isLoading}
+                      className="w-full px-4 py-3 pr-12 rounded-2xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A88C] focus:border-transparent resize-none disabled:opacity-60"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                           e.preventDefault()
@@ -208,15 +246,15 @@ export default function Kursbot() {
                   </div>
                   <button
                     type="submit"
-                    disabled={!inputValue.trim()}
+                    disabled={!inputValue.trim() || isLoading}
                     className="w-12 h-12 bg-[#D4A88C] hover:bg-[#C9997A] text-white rounded-full flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                   >
                     <Send className="w-5 h-5" />
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-3 text-center">
-                  Dies ist eine Demo-Version. Echte KI-Antworten würden hier erscheinen.
-                </p>
+
+                {/* Error banner */}
+                {error && <p className="text-sm text-red-600 mt-3 text-center">{error}</p>}
               </form>
             </div>
           </div>
