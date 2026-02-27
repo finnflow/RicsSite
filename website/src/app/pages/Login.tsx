@@ -1,32 +1,34 @@
-import { Header } from "@/app/components/Header";
-import { Footer } from "@/app/components/Footer";
-import { useState } from "react";
-import { useNavigate, Link } from "react-router";
-import { Button } from "@/app/components/ui/button";
+import { Header } from '@/app/components/Header'
+import { Footer } from '@/app/components/Footer'
+import { useState } from 'react'
+import { useNavigate, Link } from 'react-router'
+import { Button } from '@/app/components/ui/button'
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const navigate = useNavigate();
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const navigate = useNavigate()
 
   const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     // Demo: Speichere Login-Status
-    localStorage.setItem("isLoggedIn", "true");
+    localStorage.setItem('isLoggedIn', 'true')
     // Dispatch custom event to update header
-    window.dispatchEvent(new Event("login"));
-    navigate("/kundenbereich");
-  };
+    window.dispatchEvent(new Event('login'))
+    navigate('/kundenbereich')
+  }
 
   return (
     <div className="min-h-screen bg-white">
       <Header />
-      
+
       <main className="pt-28 pb-20">
         {/* Breadcrumb */}
         <div className="max-w-7xl mx-auto px-6 mb-8">
           <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Link to="/" className="hover:text-[#D4A88C] transition-colors">Start</Link>
+            <Link to="/" className="hover:text-[#D4A88C] transition-colors">
+              Start
+            </Link>
             <span>/</span>
             <span className="text-gray-900">Login</span>
           </div>
@@ -39,7 +41,10 @@ export default function Login() {
             Melde dich an, um auf deinen Kundenbereich zuzugreifen.
           </p>
 
-          <form onSubmit={handleLogin} className="bg-gradient-to-br from-[#F5EDE4] to-white rounded-3xl p-8 md:p-10 shadow-[0_4px_20px_rgba(201,181,160,0.1)] border border-[#E8DCC4]/20">
+          <form
+            onSubmit={handleLogin}
+            className="bg-gradient-to-br from-[#F5EDE4] to-white rounded-3xl p-8 md:p-10 shadow-[0_4px_20px_rgba(201,181,160,0.1)] border border-[#E8DCC4]/20"
+          >
             <div className="space-y-6">
               <div>
                 <label htmlFor="email" className="block text-sm text-gray-700 mb-2">
@@ -80,7 +85,7 @@ export default function Login() {
             </div>
 
             <p className="text-sm text-gray-600 mt-6 text-center">
-              Noch kein Zugang?{" "}
+              Noch kein Zugang?{' '}
               <Link to="/selbststart" className="text-[#D4A88C] hover:underline">
                 Jetzt starten
               </Link>
@@ -91,5 +96,5 @@ export default function Login() {
 
       <Footer />
     </div>
-  );
+  )
 }

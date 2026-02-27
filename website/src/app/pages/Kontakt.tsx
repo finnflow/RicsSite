@@ -1,21 +1,23 @@
-import { Header } from "@/app/components/Header";
-import { Footer } from "@/app/components/Footer";
-import { Check, X, Mail, Clock, ShieldAlert } from "lucide-react";
-import { Link } from "react-router";
-import { Button } from "@/app/components/ui/button";
-import { Input } from "@/app/components/ui/input";
-import { Textarea } from "@/app/components/ui/textarea";
+import { Header } from '@/app/components/Header'
+import { Footer } from '@/app/components/Footer'
+import { Check, X, Mail, Clock, ShieldAlert } from 'lucide-react'
+import { Link } from 'react-router'
+import { Button } from '@/app/components/ui/button'
+import { Input } from '@/app/components/ui/input'
+import { Textarea } from '@/app/components/ui/textarea'
 
 export default function Kontakt() {
   return (
     <div className="min-h-screen bg-white">
       <Header />
-      
+
       <main className="pt-28 pb-20">
         {/* Breadcrumb */}
         <div className="max-w-7xl mx-auto px-6 mb-8">
           <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Link to="/" className="hover:text-[#D4A88C] transition-colors">Start</Link>
+            <Link to="/" className="hover:text-[#D4A88C] transition-colors">
+              Start
+            </Link>
             <span>/</span>
             <span className="text-gray-900">Kontakt</span>
           </div>
@@ -36,7 +38,7 @@ export default function Kontakt() {
             <div className="md:col-span-3">
               <div className="bg-gradient-to-br from-[#F5EDE4] to-white rounded-3xl p-10 shadow-[0_4px_20px_rgba(201,181,160,0.1)] border border-[#E8DCC4]/20">
                 <h2 className="text-3xl mb-6 text-gray-900">Nachricht senden</h2>
-                
+
                 <form className="space-y-6">
                   <div>
                     <label htmlFor="email" className="block text-sm text-gray-700 mb-2">
@@ -101,7 +103,7 @@ export default function Kontakt() {
             <div className="md:col-span-2">
               <div className="bg-gradient-to-br from-white to-[#F5EDE4] rounded-3xl p-8 shadow-[0_4px_20px_rgba(201,181,160,0.1)] border border-[#E8DCC4]/20 sticky top-32">
                 <h3 className="text-2xl mb-6 text-gray-900">Was passiert nach dem Absenden?</h3>
-                
+
                 <div className="space-y-6">
                   {/* Step 1 */}
                   <div className="flex gap-4">
@@ -143,7 +145,8 @@ export default function Kontakt() {
                     <div>
                       <h4 className="text-sm text-gray-900 mb-1">Terminvorschlag</h4>
                       <p className="text-sm text-gray-600">
-                        In meiner Antwort schlage ich dir Zeiten für ein kostenloses Erstgespräch vor
+                        In meiner Antwort schlage ich dir Zeiten für ein kostenloses Erstgespräch
+                        vor
                       </p>
                     </div>
                   </div>
@@ -156,7 +159,9 @@ export default function Kontakt() {
                     <div>
                       <h4 className="text-sm text-gray-900 mb-2">Abgrenzung & Notfallhinweis</h4>
                       <p className="text-xs text-gray-600 leading-relaxed">
-                        Bei akuten Krisen wende dich bitte an die Telefonseelsorge (0800 111 0 111) oder den ärztlichen Bereitschaftsdienst (116 117). Meine Arbeit ersetzt keine medizinische oder psychotherapeutische Behandlung.
+                        Bei akuten Krisen wende dich bitte an die Telefonseelsorge (0800 111 0 111)
+                        oder den ärztlichen Bereitschaftsdienst (116 117). Meine Arbeit ersetzt
+                        keine medizinische oder psychotherapeutische Behandlung.
                       </p>
                     </div>
                   </div>
@@ -169,5 +174,5 @@ export default function Kontakt() {
 
       <Footer />
     </div>
-  );
+  )
 }

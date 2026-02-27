@@ -1,41 +1,61 @@
-import { Header } from "@/app/components/Header";
-import { Footer } from "@/app/components/Footer";
-import { Send, Plus, MoreVertical } from "lucide-react";
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { Header } from '@/app/components/Header'
+import { Footer } from '@/app/components/Footer'
+import { Send, Plus, MoreVertical } from 'lucide-react'
+import { useState } from 'react'
+import { useNavigate } from 'react-router'
 
 interface Message {
-  id: string;
-  content: string;
-  isBot: boolean;
-  timestamp: Date;
+  id: string
+  content: string
+  isBot: boolean
+  timestamp: Date
 }
 
 interface ChatHistory {
-  id: string;
-  title: string;
-  preview: string;
-  timestamp: string;
+  id: string
+  title: string
+  preview: string
+  timestamp: string
 }
 
 export default function Kursbot() {
-  const navigate = useNavigate();
-  const [inputValue, setInputValue] = useState("");
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const navigate = useNavigate()
+  const [inputValue, setInputValue] = useState('')
+  const [messages, setMessages] = useState<Message[]>([])
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
 
   // Demo chat history
   const chatHistory: ChatHistory[] = [
-    { id: "1", title: "Was kann ich gut mit Linsen kom...", preview: "Vor 1d", timestamp: "Vor 1d" },
-    { id: "2", title: "Ich will morgen gegen 9:00 train...", preview: "Vor 1d", timestamp: "Vor 1d" },
-    { id: "3", title: "Gib mir ein Gericht, auf dem Tre...", preview: "Vor 1d", timestamp: "Vor 1d" },
-    { id: "4", title: "wie gehts?", preview: "Vor 1d", timestamp: "Vor 1d" },
-    { id: "5", title: "und gib mir noch einmal die Erkl...", preview: "Vor 1d", timestamp: "Vor 1d" },
-  ];
+    {
+      id: '1',
+      title: 'Was kann ich gut mit Linsen kom...',
+      preview: 'Vor 1d',
+      timestamp: 'Vor 1d',
+    },
+    {
+      id: '2',
+      title: 'Ich will morgen gegen 9:00 train...',
+      preview: 'Vor 1d',
+      timestamp: 'Vor 1d',
+    },
+    {
+      id: '3',
+      title: 'Gib mir ein Gericht, auf dem Tre...',
+      preview: 'Vor 1d',
+      timestamp: 'Vor 1d',
+    },
+    { id: '4', title: 'wie gehts?', preview: 'Vor 1d', timestamp: 'Vor 1d' },
+    {
+      id: '5',
+      title: 'und gib mir noch einmal die Erkl...',
+      preview: 'Vor 1d',
+      timestamp: 'Vor 1d',
+    },
+  ]
 
   const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputValue.trim()) return;
+    e.preventDefault()
+    if (!inputValue.trim()) return
 
     // Add user message
     const userMessage: Message = {
@@ -43,31 +63,34 @@ export default function Kursbot() {
       content: inputValue,
       isBot: false,
       timestamp: new Date(),
-    };
+    }
 
-    setMessages([...messages, userMessage]);
-    setInputValue("");
+    setMessages([...messages, userMessage])
+    setInputValue('')
 
     // Simulate bot response
     setTimeout(() => {
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: "Danke für deine Frage! Ich bin ein Demo-Bot und kann dir bei Fragen zum Kursmaterial helfen. In der echten Version würde ich detaillierte Antworten basierend auf den Kursinhalten geben.",
+        content:
+          'Danke für deine Frage! Ich bin ein Demo-Bot und kann dir bei Fragen zum Kursmaterial helfen. In der echten Version würde ich detaillierte Antworten basierend auf den Kursinhalten geben.',
         isBot: true,
         timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, botMessage]);
-    }, 1000);
-  };
+      }
+      setMessages((prev) => [...prev, botMessage])
+    }, 1000)
+  }
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
-      
+
       <main className="pt-20 flex-1 flex">
         <div className="flex w-full max-w-[1800px] mx-auto">
           {/* Sidebar - Chat History (Desktop only) */}
-          <aside className={`hidden lg:flex w-64 border-r border-gray-200 bg-[#FBF8F3] flex-col ${isSidebarOpen ? '' : 'hidden'}`}>
+          <aside
+            className={`hidden lg:flex w-64 border-r border-gray-200 bg-[#FBF8F3] flex-col ${isSidebarOpen ? '' : 'hidden'}`}
+          >
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-medium text-gray-900">Lebensessenzen</h2>
@@ -80,7 +103,7 @@ export default function Kursbot() {
                 <span className="text-sm">Neuer Chat</span>
               </button>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto p-3">
               <div className="space-y-2">
                 {chatHistory.map((chat) => (
@@ -109,8 +132,8 @@ export default function Kursbot() {
                   <h1 className="text-xl lg:text-2xl font-medium text-gray-900">Kursbot</h1>
                   <p className="text-sm text-gray-600 mt-1">Stelle deine Fragen zum Kursmaterial</p>
                 </div>
-                <button 
-                  onClick={() => navigate("/kundenbereich")}
+                <button
+                  onClick={() => navigate('/kundenbereich')}
                   className="text-sm text-[#D4A88C] hover:text-[#C9997A] transition-colors"
                 >
                   Zurück zum Kundenbereich
@@ -123,8 +146,18 @@ export default function Kursbot() {
               {messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center">
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-6">
-                    <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    <svg
+                      className="w-8 h-8 text-gray-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                      />
                     </svg>
                   </div>
                   <h2 className="text-2xl text-gray-900 mb-3">Starte eine Konversation</h2>
@@ -167,8 +200,8 @@ export default function Kursbot() {
                       className="w-full px-4 py-3 pr-12 rounded-2xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#D4A88C] focus:border-transparent resize-none"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSendMessage(e);
+                          e.preventDefault()
+                          handleSendMessage(e)
                         }
                       }}
                     />
@@ -190,5 +223,5 @@ export default function Kursbot() {
         </div>
       </main>
     </div>
-  );
+  )
 }

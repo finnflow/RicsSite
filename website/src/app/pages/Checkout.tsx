@@ -1,30 +1,34 @@
-import { Header } from "@/app/components/Header";
-import { Footer } from "@/app/components/Footer";
-import { Check } from "lucide-react";
-import { useNavigate, Link } from "react-router";
-import { Button } from "@/app/components/ui/button";
+import { Header } from '@/app/components/Header'
+import { Footer } from '@/app/components/Footer'
+import { Check } from 'lucide-react'
+import { useNavigate, Link } from 'react-router'
+import { Button } from '@/app/components/ui/button'
 
 export default function Checkout() {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
   const handlePayment = () => {
     // Demo: Simuliere Zahlung
-    localStorage.setItem("isLoggedIn", "true");
-    localStorage.setItem("hasSelfstartAccess", "true");
-    navigate("/checkout/success");
-  };
+    localStorage.setItem('isLoggedIn', 'true')
+    localStorage.setItem('hasSelfstartAccess', 'true')
+    navigate('/checkout/success')
+  }
 
   return (
     <div className="min-h-screen bg-white">
       <Header />
-      
+
       <main className="pt-28 pb-20">
         {/* Breadcrumb */}
         <div className="max-w-7xl mx-auto px-6 mb-8">
           <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Link to="/" className="hover:text-[#D4A88C] transition-colors">Start</Link>
+            <Link to="/" className="hover:text-[#D4A88C] transition-colors">
+              Start
+            </Link>
             <span>/</span>
-            <Link to="/selbststart" className="hover:text-[#D4A88C] transition-colors">Selbststart</Link>
+            <Link to="/selbststart" className="hover:text-[#D4A88C] transition-colors">
+              Selbststart
+            </Link>
             <span>/</span>
             <span className="text-gray-900">Checkout</span>
           </div>
@@ -32,14 +36,16 @@ export default function Checkout() {
 
         {/* Checkout */}
         <section className="max-w-2xl mx-auto px-6">
-          <h1 className="text-4xl md:text-5xl mb-6 text-gray-900 text-center">Selbststart sichern</h1>
+          <h1 className="text-4xl md:text-5xl mb-6 text-gray-900 text-center">
+            Selbststart sichern
+          </h1>
           <p className="text-gray-600 mb-12 text-center">
             Du bist nur einen Schritt entfernt. Nach der Zahlung erhältst du sofort Zugriff.
           </p>
 
           <div className="bg-gradient-to-br from-[#F5EDE4] to-white rounded-3xl p-8 md:p-10 shadow-[0_4px_20px_rgba(201,181,160,0.1)] border border-[#E8DCC4]/20 mb-8">
             <h2 className="text-2xl mb-6 text-gray-900">Zusammenfassung</h2>
-            
+
             <div className="space-y-4 mb-8">
               <div className="flex justify-between items-center py-3 border-b border-gray-200">
                 <span className="text-gray-700">Selbststart-Programm</span>
@@ -81,7 +87,8 @@ export default function Checkout() {
             </Button>
 
             <p className="text-sm text-gray-600 mt-6 text-center">
-              Dies ist eine Demo. In der echten Version würdest du zu einer sicheren Zahlungsseite weitergeleitet.
+              Dies ist eine Demo. In der echten Version würdest du zu einer sicheren Zahlungsseite
+              weitergeleitet.
             </p>
           </div>
         </section>
@@ -89,5 +96,5 @@ export default function Checkout() {
 
       <Footer />
     </div>
-  );
+  )
 }

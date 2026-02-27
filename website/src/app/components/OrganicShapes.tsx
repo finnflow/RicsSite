@@ -1,4 +1,4 @@
-import { motion } from "motion/react";
+import { motion } from 'motion/react'
 
 export function OrganicShapes() {
   return (
@@ -15,7 +15,7 @@ export function OrganicShapes() {
         transition={{
           duration: 8,
           repeat: Infinity,
-          ease: "easeInOut",
+          ease: 'easeInOut',
         }}
       >
         <path
@@ -37,7 +37,7 @@ export function OrganicShapes() {
         transition={{
           duration: 10,
           repeat: Infinity,
-          ease: "easeInOut",
+          ease: 'easeInOut',
           delay: 1,
         }}
       >
@@ -59,7 +59,7 @@ export function OrganicShapes() {
         transition={{
           duration: 12,
           repeat: Infinity,
-          ease: "easeInOut",
+          ease: 'easeInOut',
           delay: 2,
         }}
       >
@@ -79,7 +79,7 @@ export function OrganicShapes() {
         transition={{
           duration: 5,
           repeat: Infinity,
-          ease: "easeInOut",
+          ease: 'easeInOut',
         }}
       />
       <motion.div
@@ -91,7 +91,7 @@ export function OrganicShapes() {
         transition={{
           duration: 6,
           repeat: Infinity,
-          ease: "easeInOut",
+          ease: 'easeInOut',
           delay: 1,
         }}
       />
@@ -104,7 +104,7 @@ export function OrganicShapes() {
         transition={{
           duration: 7,
           repeat: Infinity,
-          ease: "easeInOut",
+          ease: 'easeInOut',
           delay: 2,
         }}
       />
@@ -117,10 +117,10 @@ export function OrganicShapes() {
         transition={{
           duration: 4.5,
           repeat: Infinity,
-          ease: "easeInOut",
+          ease: 'easeInOut',
           delay: 1.5,
         }}
       />
     </div>
-  );
+  )
 }

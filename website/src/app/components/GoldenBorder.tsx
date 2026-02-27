@@ -1,4 +1,4 @@
-import { motion } from "motion/react";
+import { motion } from 'motion/react'
 
 export function GoldenBorder() {
   return (
@@ -32,7 +32,7 @@ export function GoldenBorder() {
           filter="url(#goldGlow)"
           initial={{ pathLength: 0, opacity: 0 }}
           animate={{ pathLength: 1, opacity: 1 }}
-          transition={{ duration: 2, ease: "easeInOut" }}
+          transition={{ duration: 2, ease: 'easeInOut' }}
         />
         <motion.path
           d="M0,80 Q480,20 960,80 T1920,80"
@@ -42,7 +42,7 @@ export function GoldenBorder() {
           filter="url(#goldGlow)"
           initial={{ pathLength: 0, opacity: 0 }}
           animate={{ pathLength: 1, opacity: 1 }}
-          transition={{ duration: 2, ease: "easeInOut", delay: 0.2 }}
+          transition={{ duration: 2, ease: 'easeInOut', delay: 0.2 }}
         />
       </svg>
 
@@ -73,7 +73,7 @@ export function GoldenBorder() {
           strokeLinecap="round"
           initial={{ pathLength: 0, opacity: 0 }}
           animate={{ pathLength: 1, opacity: 1 }}
-          transition={{ duration: 2.5, ease: "easeInOut", delay: 0.3 }}
+          transition={{ duration: 2.5, ease: 'easeInOut', delay: 0.3 }}
         />
         {/* Inner accent line */}
         <motion.path
@@ -85,7 +85,7 @@ export function GoldenBorder() {
           opacity="0.5"
           initial={{ pathLength: 0, opacity: 0 }}
           animate={{ pathLength: 1, opacity: 0.5 }}
-          transition={{ duration: 2.5, ease: "easeInOut", delay: 0.5 }}
+          transition={{ duration: 2.5, ease: 'easeInOut', delay: 0.5 }}
         />
       </svg>
 
@@ -116,7 +116,7 @@ export function GoldenBorder() {
           strokeLinecap="round"
           initial={{ pathLength: 0, opacity: 0 }}
           animate={{ pathLength: 1, opacity: 1 }}
-          transition={{ duration: 2.5, ease: "easeInOut", delay: 0.4 }}
+          transition={{ duration: 2.5, ease: 'easeInOut', delay: 0.4 }}
         />
         {/* Inner accent line */}
         <motion.path
@@ -128,7 +128,7 @@ export function GoldenBorder() {
           opacity="0.5"
           initial={{ pathLength: 0, opacity: 0 }}
           animate={{ pathLength: 1, opacity: 0.5 }}
-          transition={{ duration: 2.5, ease: "easeInOut", delay: 0.6 }}
+          transition={{ duration: 2.5, ease: 'easeInOut', delay: 0.6 }}
         />
       </svg>
 
@@ -154,7 +154,7 @@ export function GoldenBorder() {
           filter="url(#goldGlow)"
           initial={{ pathLength: 0, opacity: 0 }}
           animate={{ pathLength: 1, opacity: 1 }}
-          transition={{ duration: 2, ease: "easeInOut", delay: 0.5 }}
+          transition={{ duration: 2, ease: 'easeInOut', delay: 0.5 }}
         />
         <motion.path
           d="M0,80 Q480,140 960,80 T1920,80"
@@ -164,9 +164,9 @@ export function GoldenBorder() {
           filter="url(#goldGlow)"
           initial={{ pathLength: 0, opacity: 0 }}
           animate={{ pathLength: 1, opacity: 1 }}
-          transition={{ duration: 2, ease: "easeInOut", delay: 0.7 }}
+          transition={{ duration: 2, ease: 'easeInOut', delay: 0.7 }}
         />
       </svg>
     </div>
-  );
+  )
 }

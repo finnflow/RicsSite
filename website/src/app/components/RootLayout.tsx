@@ -1,5 +1,5 @@
-import { Outlet } from 'react-router';
-import { ScrollToTop } from './ScrollToTop';
+import { Outlet } from 'react-router'
+import { ScrollToTop } from './ScrollToTop'
 
 export function RootLayout() {
   return (
@@ -7,5 +7,5 @@ export function RootLayout() {
       <ScrollToTop />
       <Outlet />
     </>
-  );
+  )
 }

@@ -1,48 +1,49 @@
-import { Send, Maximize2 } from "lucide-react";
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { Send, Maximize2 } from 'lucide-react'
+import { useState } from 'react'
+import { useNavigate } from 'react-router'
 
 interface Message {
-  id: string;
-  content: string;
-  isBot: boolean;
+  id: string
+  content: string
+  isBot: boolean
 }
 
 export function ChatWidget() {
-  const navigate = useNavigate();
-  const [inputValue, setInputValue] = useState("");
+  const navigate = useNavigate()
+  const [inputValue, setInputValue] = useState('')
   const [messages, setMessages] = useState<Message[]>([
     {
-      id: "welcome",
-      content: "Hallo! Ich bin dein Kursbot. Stelle mir eine Frage zum Kursmaterial.",
+      id: 'welcome',
+      content: 'Hallo! Ich bin dein Kursbot. Stelle mir eine Frage zum Kursmaterial.',
       isBot: true,
     },
-  ]);
+  ])
 
   const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputValue.trim()) return;
+    e.preventDefault()
+    if (!inputValue.trim()) return
 
     // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
       content: inputValue,
       isBot: false,
-    };
+    }
 
-    setMessages([...messages, userMessage]);
-    setInputValue("");
+    setMessages([...messages, userMessage])
+    setInputValue('')
 
     // Simulate bot response
     setTimeout(() => {
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: "Das ist eine Demo-Antwort. Für die vollständige Konversation öffne den Vollbild-Modus.",
+        content:
+          'Das ist eine Demo-Antwort. Für die vollständige Konversation öffne den Vollbild-Modus.',
         isBot: true,
-      };
-      setMessages((prev) => [...prev, botMessage]);
-    }, 800);
-  };
+      }
+      setMessages((prev) => [...prev, botMessage])
+    }, 800)
+  }
 
   return (
     <div className="bg-gradient-to-br from-white to-[#F5EDE4] rounded-2xl md:rounded-3xl shadow-[0_4px_20px_rgba(201,181,160,0.15)] border border-[#E8DCC4]/30 overflow-hidden flex flex-col h-[500px] md:h-[600px]">
@@ -53,7 +54,7 @@ export function ChatWidget() {
           <p className="text-xs md:text-sm text-white/80">Schnelle Hilfe zum Material</p>
         </div>
         <button
-          onClick={() => navigate("/kursbot")}
+          onClick={() => navigate('/kursbot')}
           className="w-9 h-9 md:w-10 md:h-10 bg-white/20 hover:bg-white/30 rounded-lg flex items-center justify-center transition-colors"
           title="Vollbild öffnen"
         >
@@ -66,13 +67,11 @@ export function ChatWidget() {
         {messages.map((message) => (
           <div
             key={message.id}
-            className={`flex ${message.isBot ? "justify-start" : "justify-end"}`}
+            className={`flex ${message.isBot ? 'justify-start' : 'justify-end'}`}
           >
             <div
               className={`max-w-[85%] rounded-xl md:rounded-2xl px-3 py-2 md:px-4 md:py-3 ${
-                message.isBot
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "bg-[#D4A88C] text-white"
+                message.isBot ? 'bg-white text-gray-900 shadow-sm' : 'bg-[#D4A88C] text-white'
               }`}
             >
               <p className="text-xs md:text-sm leading-relaxed">{message.content}</p>
@@ -101,5 +100,5 @@ export function ChatWidget() {
         </form>
       </div>
     </div>
-  );
+  )
 }
