@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router'
 import {
   sendChatMessage,
   fetchConversations,
+  fetchConversationMessages,
   type ConversationApiItem,
 } from '@/lib/api/kursbotClient'
 
@@ -39,6 +40,9 @@ export default function Kursbot() {
   const [conversations, setConversations] = useState<ConversationApiItem[]>([])
   const [isLoadingConversations, setIsLoadingConversations] = useState(false)
   const [conversationsError, setConversationsError] = useState<string | null>(null)
+
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false)
+  const [messagesError, setMessagesError] = useState<string | null>(null)
 
   // guestId einmalig beim Mount initialisieren
   useEffect(() => {
@@ -119,6 +123,56 @@ export default function Kursbot() {
       })
   }
 
+  const handleSelectConversation = (conversation: ConversationApiItem) => {
+    if (!guestId) return
+
+    const id = conversation.id
+    if (!id) return
+
+    setConversationId(id)
+    setIsLoadingMessages(true)
+    setMessagesError(null)
+    setError(null)
+
+    fetchConversationMessages(id, guestId)
+      .then((res) => {
+        // Messages nach created_at sortieren (älteste zuerst)
+        const sorted = [...(res.messages ?? [])].sort((a, b) => {
+          const da = new Date(a.created_at).getTime()
+          const db = new Date(b.created_at).getTime()
+          return da - db
+        })
+
+        const mapped: Message[] = sorted.map((m) => ({
+          id: m.id,
+          content: m.content,
+          isBot: m.role === 'assistant',
+          timestamp: new Date(m.created_at),
+        }))
+
+        setMessages(mapped)
+      })
+      .catch((err: unknown) => {
+        console.error('[Kursbot] fetchConversationMessages error:', err)
+        setMessagesError(
+          'Dieses Gespräch konnte nicht geladen werden. Bitte versuch es später erneut.',
+        )
+      })
+      .finally(() => {
+        setIsLoadingMessages(false)
+      })
+  }
+
+  const handleNewChat = () => {
+    setConversationId(null)
+    setMessages([])
+    setMessagesError(null)
+    setError(null)
+  }
+
+  const isConversationSelected = (id: string | undefined) =>
+    !!conversationId && id === conversationId
+
   return (
     <div className="min-h-screen bg-[#F7F3EF] flex flex-col">
       <Header />
@@ -139,8 +193,8 @@ export default function Kursbot() {
 
             <button
               type="button"
+              onClick={handleNewChat}
               className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-2xl bg-[#D4A88C] text-white text-sm font-medium hover:bg-[#C9997A] transition-colors"
-              // Klick-Verhalten für "Neuer Chat" kommt in einem späteren Schritt
             >
               <Plus className="w-4 h-4" />
               <span>Neuer Chat</span>
@@ -171,16 +225,22 @@ export default function Kursbot() {
                   }
                 }
 
+                const selected = isConversationSelected(conv.id)
+
                 return (
-                  <div
+                  <button
                     key={conv.id}
-                    className="w-full text-left px-3 py-2 rounded-2xl hover:bg-[#F6E8DE] cursor-default"
+                    type="button"
+                    onClick={() => handleSelectConversation(conv)}
+                    className={`w-full text-left px-3 py-2 rounded-2xl hover:bg-[#F6E8DE] ${
+                      selected ? 'bg-[#F6E8DE]' : ''
+                    }`}
                   >
                     <p className="text-sm font-medium text-[#3A2A21] truncate">
                       {conv.title || 'Gespräch'}
                     </p>
                     {timestamp && <p className="text-xs text-gray-500">{timestamp}</p>}
-                  </div>
+                  </button>
                 )
               })}
             </div>
@@ -210,7 +270,9 @@ export default function Kursbot() {
             <div className="bg-white/80 rounded-3xl border border-[#E2D4C8] p-4 flex flex-col h-[60vh]">
               {/* Messages Area */}
               <div className="flex-1 overflow-y-auto space-y-3">
-                {messages.length === 0 ? (
+                {messagesError && <p className="text-sm text-red-600">{messagesError}</p>}
+
+                {messages.length === 0 && !isLoadingMessages ? (
                   <div className="h-full flex flex-col items-center justify-center text-center text-gray-500 px-8">
                     <h2 className="text-lg font-medium mb-2">Starte eine Konversation</h2>
                     <p className="text-sm">
@@ -219,6 +281,9 @@ export default function Kursbot() {
                   </div>
                 ) : (
                   <>
+                    {isLoadingMessages && (
+                      <div className="text-xs text-gray-500 mb-2">Gespräch wird geladen…</div>
+                    )}
                     {messages.map((message) => (
                       <div
                         key={message.id}
