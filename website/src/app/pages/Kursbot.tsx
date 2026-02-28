@@ -1,5 +1,5 @@
 import { Header } from '@/app/components/Header'
-import { Send, Plus, MoreVertical, Trash2 } from 'lucide-react'
+import { Send, Plus, MoreVertical, Trash2, Menu, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import {
@@ -47,6 +47,8 @@ export default function Kursbot() {
 
   const [deletingConversationId, setDeletingConversationId] = useState<string | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   // guestId einmalig beim Mount initialisieren
   useEffect(() => {
@@ -136,6 +138,7 @@ export default function Kursbot() {
     setIsLoadingMessages(true)
     setMessagesError(null)
     setError(null)
+    setIsSidebarOpen(false)
 
     fetchConversationMessages(id, guestId)
       .then((res) => {
@@ -170,6 +173,7 @@ export default function Kursbot() {
     setMessages([])
     setMessagesError(null)
     setError(null)
+    setIsSidebarOpen(false)
   }
 
   const handleDeleteConversation = (id: string) => {
@@ -207,109 +211,157 @@ export default function Kursbot() {
   const isConversationSelected = (id: string | undefined) =>
     !!conversationId && id === conversationId
 
-  return (
-    <div className="min-h-screen bg-[#F7F3EF] flex flex-col">
-      <Header />
-      <main className="flex-1">
-        <div className="max-w-6xl mx-auto px-4 py-8 lg:flex lg:gap-8">
-          {/* Sidebar – Chat History (Desktop only) */}
-          <aside className="hidden lg:flex lg:w-72 lg:flex-col border border-[#E2D4C8] rounded-3xl bg-white/80 p-4 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-[#3A2A21]">Lebensessenzen</h2>
+  // Shared sidebar content rendered in both the desktop aside and the mobile drawer
+  const sidebarContent = (
+    <>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-[#3A2A21]">Lebensessenzen</h2>
+        <button
+          type="button"
+          className="p-1 rounded-full hover:bg-[#F6E8DE] text-[#8A6B54]"
+          aria-label="Weitere Optionen"
+        >
+          <MoreVertical className="w-4 h-4" />
+        </button>
+      </div>
+
+      <button
+        type="button"
+        onClick={handleNewChat}
+        className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-2xl bg-[#D4A88C] text-white text-sm font-medium hover:bg-[#C9997A] transition-colors"
+      >
+        <Plus className="w-4 h-4" />
+        <span>Neuer Chat</span>
+      </button>
+
+      <div className="mt-4 flex-1 min-h-0 overflow-y-auto space-y-1">
+        {isLoadingConversations && (
+          <p className="text-sm text-gray-500">Lade frühere Gespräche…</p>
+        )}
+
+        {conversationsError && <p className="text-sm text-red-600">{conversationsError}</p>}
+
+        {!isLoadingConversations && !conversationsError && conversations.length === 0 && (
+          <p className="text-sm text-gray-500">Noch keine Gespräche vorhanden.</p>
+        )}
+
+        {conversations.map((conv) => {
+          const dateStr = conv.updated_at ?? conv.created_at
+          let timestamp = ''
+
+          if (dateStr) {
+            const d = new Date(dateStr)
+            if (!Number.isNaN(d.getTime())) {
+              timestamp = d.toLocaleString('de-DE', {
+                dateStyle: 'short',
+                timeStyle: 'short',
+              })
+            }
+          }
+
+          const selected = isConversationSelected(conv.id)
+          const isDeleting = deletingConversationId === conv.id
+
+          return (
+            <div
+              key={conv.id}
+              className={`flex items-center gap-2 w-full px-3 py-2 rounded-2xl ${
+                selected ? 'bg-[#F6E8DE]' : 'hover:bg-[#F6E8DE]'
+              }`}
+            >
               <button
                 type="button"
-                className="p-1 rounded-full hover:bg-[#F6E8DE] text-[#8A6B54]"
-                aria-label="Weitere Optionen"
+                onClick={() => handleSelectConversation(conv)}
+                className="flex-1 text-left"
               >
-                <MoreVertical className="w-4 h-4" />
+                <p className="text-sm font-medium text-[#3A2A21] truncate">
+                  {conv.title || 'Gespräch'}
+                </p>
+                {timestamp && <p className="text-xs text-gray-500">{timestamp}</p>}
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleDeleteConversation(conv.id)
+                }}
+                disabled={isDeleting}
+                className="p-1 rounded-full hover:bg-[#F6E8DE] text-[#8A6B54] disabled:opacity-50"
+                aria-label="Gespräch löschen"
+              >
+                <Trash2 className="w-4 h-4" />
               </button>
             </div>
+          )
+        })}
+      </div>
 
-            <button
-              type="button"
-              onClick={handleNewChat}
-              className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-2xl bg-[#D4A88C] text-white text-sm font-medium hover:bg-[#C9997A] transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Neuer Chat</span>
-            </button>
+      {deleteError && <p className="mt-2 text-xs text-red-600 text-center">{deleteError}</p>}
 
-            <div className="mt-4 flex-1 overflow-y-auto space-y-1">
-              {isLoadingConversations && (
-                <p className="text-sm text-gray-500">Lade frühere Gespräche…</p>
-              )}
+      <p className="mt-4 text-[11px] text-gray-400 text-center">
+        © Lebensessenzen | Ricarda Ludwig
+      </p>
+    </>
+  )
 
-              {conversationsError && <p className="text-sm text-red-600">{conversationsError}</p>}
+  return (
+    // h-screen + overflow-hidden: page never scrolls; only the messages area scrolls internally
+    <div className="h-screen bg-[#F7F3EF] flex flex-col overflow-hidden">
+      <Header />
+      {/* Spacer that matches the fixed header height (~77px → h-20 = 80px) */}
+      <div className="h-20 flex-shrink-0" />
 
-              {!isLoadingConversations && !conversationsError && conversations.length === 0 && (
-                <p className="text-sm text-gray-500">Noch keine Gespräche vorhanden.</p>
-              )}
-
-              {conversations.map((conv) => {
-                const dateStr = conv.updated_at ?? conv.created_at
-                let timestamp = ''
-
-                if (dateStr) {
-                  const d = new Date(dateStr)
-                  if (!Number.isNaN(d.getTime())) {
-                    timestamp = d.toLocaleString('de-DE', {
-                      dateStyle: 'short',
-                      timeStyle: 'short',
-                    })
-                  }
-                }
-
-                const selected = isConversationSelected(conv.id)
-                const isDeleting = deletingConversationId === conv.id
-
-                return (
-                  <div
-                    key={conv.id}
-                    className={`flex items-center gap-2 w-full px-3 py-2 rounded-2xl ${
-                      selected ? 'bg-[#F6E8DE]' : 'hover:bg-[#F6E8DE]'
-                    }`}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => handleSelectConversation(conv)}
-                      className="flex-1 text-left"
-                    >
-                      <p className="text-sm font-medium text-[#3A2A21] truncate">
-                        {conv.title || 'Gespräch'}
-                      </p>
-                      {timestamp && <p className="text-xs text-gray-500">{timestamp}</p>}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDeleteConversation(conv.id)
-                      }}
-                      disabled={isDeleting}
-                      className="p-1 rounded-full hover:bg-[#F6E8DE] text-[#8A6B54] disabled:opacity-50"
-                      aria-label="Gespräch löschen"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                )
-              })}
-            </div>
-
-            {deleteError && <p className="mt-2 text-xs text-red-600 text-center">{deleteError}</p>}
-
-            <p className="mt-4 text-[11px] text-gray-400 text-center">
-              © Lebensessenzen | Ricarda Ludwig
-            </p>
+      <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div className="h-full max-w-6xl w-full mx-auto px-4 pt-4 pb-6 flex gap-6">
+          {/* Sidebar – Desktop (lg+) */}
+          <aside className="hidden lg:flex w-72 flex-col border border-[#E2D4C8] rounded-3xl bg-white/80 p-4 shadow-sm">
+            {sidebarContent}
           </aside>
 
+          {/* Sidebar – Mobile slide-over drawer (below lg) */}
+          {isSidebarOpen && (
+            <>
+              {/* Backdrop */}
+              <div
+                className="fixed inset-0 bg-black/30 z-40 lg:hidden"
+                onClick={() => setIsSidebarOpen(false)}
+                aria-hidden="true"
+              />
+              {/* Drawer panel — starts below the fixed header */}
+              <div className="fixed top-20 left-0 bottom-0 w-72 flex flex-col border-r border-[#E2D4C8] bg-[#F7F3EF] z-50 p-4 shadow-xl lg:hidden">
+                <div className="flex justify-end mb-2 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setIsSidebarOpen(false)}
+                    className="p-1 rounded-full hover:bg-[#F6E8DE] text-[#8A6B54]"
+                    aria-label="Verlauf schließen"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                {sidebarContent}
+              </div>
+            </>
+          )}
+
           {/* Main Chat Area */}
-          <section className="flex-1 mt-6 lg:mt-0">
+          <section className="flex-1 min-h-0 flex flex-col">
             {/* Chat Header */}
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h1 className="text-2xl font-semibold text-[#3A2A21]">Kursbot</h1>
-                <p className="text-sm text-gray-600">Stelle deine Fragen zum Kursmaterial</p>
+            <div className="flex items-center justify-between mb-4 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                {/* Mobile sidebar toggle — only visible below lg */}
+                <button
+                  type="button"
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="lg:hidden p-2 rounded-xl hover:bg-[#F6E8DE] text-[#8A6B54]"
+                  aria-label="Verlauf öffnen"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+                <div>
+                  <h1 className="text-2xl font-semibold text-[#3A2A21]">Kursbot</h1>
+                  <p className="text-sm text-gray-600">Stelle deine Fragen zum Kursmaterial</p>
+                </div>
               </div>
               <button
                 type="button"
@@ -320,9 +372,10 @@ export default function Kursbot() {
               </button>
             </div>
 
-            <div className="bg-white/80 rounded-3xl border border-[#E2D4C8] p-4 flex flex-col h-[60vh]">
-              {/* Messages Area */}
-              <div className="flex-1 overflow-y-auto space-y-3">
+            {/* Chat Box — flex-1 + min-h-0 fills all remaining height */}
+            <div className="flex-1 min-h-0 bg-white/80 rounded-3xl border border-[#E2D4C8] p-4 flex flex-col">
+              {/* Messages Area — flex-1 + min-h-0 enables overflow-y-auto to work correctly */}
+              <div className="flex-1 min-h-0 overflow-y-auto space-y-3">
                 {messagesError && <p className="text-sm text-red-600">{messagesError}</p>}
 
                 {messages.length === 0 && !isLoadingMessages ? (
@@ -355,7 +408,7 @@ export default function Kursbot() {
               </div>
 
               {/* Input Area */}
-              <form onSubmit={handleSendMessage} className="mt-4">
+              <form onSubmit={handleSendMessage} className="mt-4 flex-shrink-0">
                 <div className="flex items-end gap-3">
                   <div className="flex-1 relative">
                     <textarea
