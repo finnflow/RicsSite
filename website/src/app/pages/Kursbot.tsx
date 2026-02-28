@@ -1,9 +1,11 @@
 import { Header } from '@/app/components/Header'
-import { Send, Plus, Trash2, Menu, X, MessageCircle } from 'lucide-react'
+import { Send, Plus, Trash2, Menu, X, MessageCircle, Paperclip } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import {
   sendChatMessage,
+  sendImageMessage,
+  resolveImageUrl,
   fetchConversations,
   fetchConversationMessages,
   deleteConversation,
@@ -15,6 +17,7 @@ interface Message {
   content: string
   isBot: boolean
   timestamp: Date
+  imageUrl?: string | null
 }
 
 const GUEST_ID_KEY = 'lebensessenz_guest_id'
@@ -62,9 +65,43 @@ function TypingIndicator() {
   )
 }
 
+// Message bubble — renders text and/or image thumbnail
+function MessageBubble({ message }: { message: Message }) {
+  const hasImage = Boolean(message.imageUrl)
+  const hasText = Boolean(message.content)
+  const imageOnly = hasImage && !hasText
+
+  return (
+    <div className={`flex ${message.isBot ? 'justify-start' : 'justify-end'}`}>
+      <div
+        className={`max-w-[75%] rounded-2xl shadow-sm ${
+          message.isBot ? 'rounded-tl-sm bg-[#F6E8DE]' : 'rounded-tr-sm bg-[#D4A88C] text-white'
+        } ${imageOnly ? 'p-1.5' : 'px-4 py-3'}`}
+      >
+        {hasImage && (
+          <img
+            src={message.imageUrl!}
+            alt=""
+            className={`max-h-40 w-auto max-w-full object-contain block border border-black/10 ${
+              imageOnly ? 'rounded-xl' : 'rounded-lg mb-2'
+            }`}
+          />
+        )}
+        {hasText &&
+          (message.isBot ? (
+            <BotMessageContent content={message.content} />
+          ) : (
+            <p className="text-sm leading-relaxed">{message.content}</p>
+          ))}
+      </div>
+    </div>
+  )
+}
+
 export default function Kursbot() {
   const navigate = useNavigate()
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [guestId, setGuestId] = useState<string | null>(null)
   const [conversationId, setConversationId] = useState<string | null>(null)
@@ -84,6 +121,10 @@ export default function Kursbot() {
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+
+  // Attached image state: the File and a local object URL for preview/bubble display
+  const [attachedImage, setAttachedImage] = useState<File | null>(null)
+  const [attachedPreviewUrl, setAttachedPreviewUrl] = useState<string | null>(null)
 
   useEffect(() => {
     setGuestId(getOrCreateGuestId())
@@ -116,25 +157,60 @@ export default function Kursbot() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isLoading])
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    // Revoke previous preview URL before creating a new one
+    if (attachedPreviewUrl) URL.revokeObjectURL(attachedPreviewUrl)
+    setAttachedImage(file)
+    setAttachedPreviewUrl(URL.createObjectURL(file))
+    // Reset input so the same file can be reselected if needed
+    e.target.value = ''
+  }
+
+  const handleRemoveAttachment = () => {
+    if (attachedPreviewUrl) URL.revokeObjectURL(attachedPreviewUrl)
+    setAttachedImage(null)
+    setAttachedPreviewUrl(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!inputValue.trim() || !guestId || isLoading) return
+    const hasText = inputValue.trim().length > 0
+    const hasImage = attachedImage !== null
+    if ((!hasText && !hasImage) || !guestId || isLoading) return
 
     const isNewConversation = !conversationId
 
+    // Capture before clearing — the preview URL is passed into the message bubble
+    const currentInput = inputValue
+    const currentImage = attachedImage
+    const currentPreviewUrl = attachedPreviewUrl
+
     const userMessage: Message = {
       id: Date.now().toString(),
-      content: inputValue,
+      content: currentInput,
       isBot: false,
       timestamp: new Date(),
+      // Object URL stays valid for the session; we don't revoke it so the bubble keeps showing
+      imageUrl: currentPreviewUrl,
     }
+
     setMessages((prev) => [...prev, userMessage])
-    const currentInput = inputValue
     setInputValue('')
+    // Clear attachment state without revoking — the URL lives on in the message bubble
+    setAttachedImage(null)
+    setAttachedPreviewUrl(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
     setIsLoading(true)
     setError(null)
 
-    sendChatMessage({ message: currentInput, guestId, conversationId })
+    const sendPromise = currentImage
+      ? sendImageMessage({ message: currentInput, guestId, conversationId, image: currentImage })
+      : sendChatMessage({ message: currentInput, guestId, conversationId })
+
+    sendPromise
       .then((response) => {
         setConversationId(response.conversationId)
         setMessages((prev) => [
@@ -182,6 +258,7 @@ export default function Kursbot() {
             content: m.content,
             isBot: m.role === 'assistant',
             timestamp: new Date(m.created_at),
+            imageUrl: m.image_path ? resolveImageUrl(m.image_path) : null,
           })),
         )
       })
@@ -202,6 +279,11 @@ export default function Kursbot() {
     setMessagesError(null)
     setError(null)
     setIsSidebarOpen(false)
+    // Clear any pending attachment
+    if (attachedPreviewUrl) URL.revokeObjectURL(attachedPreviewUrl)
+    setAttachedImage(null)
+    setAttachedPreviewUrl(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const handleDeleteConversation = (id: string) => {
@@ -224,9 +306,7 @@ export default function Kursbot() {
       })
       .catch((err: unknown) => {
         console.error('[Kursbot] deleteConversation error:', err)
-        setDeleteError(
-          'Das Gespräch konnte nicht gelöscht werden. Bitte versuch es später erneut.',
-        )
+        setDeleteError('Das Gespräch konnte nicht gelöscht werden. Bitte versuch es später erneut.')
       })
       .finally(() => {
         setDeletingConversationId(null)
@@ -262,9 +342,7 @@ export default function Kursbot() {
           <div
             key={conv.id}
             className={`group flex items-center w-full rounded-lg border-l-2 transition-colors ${
-              selected
-                ? 'bg-[#F0E0D0] border-[#D4A88C]'
-                : 'border-transparent hover:bg-[#F6EDE5]'
+              selected ? 'bg-[#F0E0D0] border-[#D4A88C]' : 'border-transparent hover:bg-[#F6EDE5]'
             }`}
           >
             <button
@@ -279,9 +357,7 @@ export default function Kursbot() {
               >
                 {conv.title || 'Gespräch'}
               </p>
-              {timestamp && (
-                <p className="text-[11px] text-[#8A6B54]/60 mt-0.5">{timestamp}</p>
-              )}
+              {timestamp && <p className="text-[11px] text-[#8A6B54]/60 mt-0.5">{timestamp}</p>}
             </button>
             <button
               type="button"
@@ -309,7 +385,6 @@ export default function Kursbot() {
 
       <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
         <div className="h-full max-w-6xl w-full mx-auto px-4 pt-4 pb-6 flex gap-5">
-
           {/* Desktop Sidebar */}
           <aside className="hidden lg:flex w-64 flex-col bg-white/70 rounded-2xl border border-[#E2D4C8] shadow-sm p-4 gap-4">
             <h2 className="text-xs font-semibold text-[#8A6B54] tracking-widest uppercase">
@@ -397,7 +472,6 @@ export default function Kursbot() {
 
             {/* Chat Container */}
             <div className="flex-1 min-h-0 bg-white/80 rounded-2xl border border-[#E2D4C8] shadow-sm flex flex-col overflow-hidden">
-
               {/* Messages */}
               <div className="flex-1 min-h-0 overflow-y-auto px-5 py-5 space-y-4">
                 {messagesError && (
@@ -426,24 +500,7 @@ export default function Kursbot() {
                       </p>
                     )}
                     {messages.map((message) => (
-                      <div
-                        key={message.id}
-                        className={`flex ${message.isBot ? 'justify-start' : 'justify-end'}`}
-                      >
-                        <div
-                          className={`max-w-[75%] rounded-2xl px-4 py-3 shadow-sm ${
-                            message.isBot
-                              ? 'bg-[#F6E8DE] rounded-tl-sm'
-                              : 'bg-[#D4A88C] text-white rounded-tr-sm'
-                          }`}
-                        >
-                          {message.isBot ? (
-                            <BotMessageContent content={message.content} />
-                          ) : (
-                            <p className="text-sm leading-relaxed">{message.content}</p>
-                          )}
-                        </div>
-                      </div>
+                      <MessageBubble key={message.id} message={message} />
                     ))}
                     {isLoading && <TypingIndicator />}
                   </>
@@ -455,36 +512,84 @@ export default function Kursbot() {
               {/* Input */}
               <div className="border-t border-[#EDE0D4] p-4 flex-shrink-0">
                 <form onSubmit={handleSendMessage}>
-                  <div className="flex items-end gap-3 bg-[#F7F3EF] rounded-xl border border-[#E2D4C8] focus-within:border-[#D4A88C] focus-within:ring-2 focus-within:ring-[#D4A88C]/20 transition-all px-4 py-2">
-                    <textarea
-                      value={inputValue}
-                      onChange={(e) => setInputValue(e.target.value)}
-                      placeholder="Stelle eine Frage…"
-                      rows={1}
-                      disabled={isLoading}
-                      className="flex-1 bg-transparent text-sm text-[#3A2A21] placeholder:text-[#8A6B54]/50 focus:outline-none resize-none disabled:opacity-60 py-1.5"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault()
-                          handleSendMessage(e)
-                        }
-                      }}
-                    />
-                    <button
-                      type="submit"
-                      disabled={!inputValue.trim() || isLoading}
-                      className="w-9 h-9 bg-[#D4A88C] hover:bg-[#C9997A] text-white rounded-lg flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
-                    >
-                      <Send className="w-4 h-4" />
-                    </button>
+                  <div className="bg-[#F7F3EF] rounded-xl border border-[#E2D4C8] focus-within:border-[#D4A88C] focus-within:ring-2 focus-within:ring-[#D4A88C]/20 transition-all">
+                    {/* Image preview strip — shown when a file is attached */}
+                    {attachedPreviewUrl && (
+                      <div className="px-4 pt-3 pb-1">
+                        <div className="relative inline-block">
+                          <img
+                            src={attachedPreviewUrl}
+                            alt="Anhang"
+                            className="h-16 w-auto max-w-[120px] rounded-lg object-cover border border-[#E2D4C8]"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleRemoveAttachment}
+                            className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-[#3A2A21]/80 hover:bg-[#3A2A21] text-white rounded-full flex items-center justify-center transition-colors"
+                            aria-label="Anhang entfernen"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Input row */}
+                    <div className="flex items-end gap-2 px-4 py-2">
+                      <textarea
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        placeholder="Stelle eine Frage…"
+                        rows={1}
+                        disabled={isLoading}
+                        className="flex-1 bg-transparent text-sm text-[#3A2A21] placeholder:text-[#8A6B54]/50 focus:outline-none resize-none disabled:opacity-60 py-1.5"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault()
+                            handleSendMessage(e)
+                          }
+                        }}
+                      />
+                      <div className="flex items-center gap-1.5 flex-shrink-0 pb-0.5">
+                        {/* Hidden file input */}
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileChange}
+                          className="hidden"
+                          aria-label="Bild auswählen"
+                        />
+                        {/* Attach button */}
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isLoading}
+                          className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors disabled:opacity-40 ${
+                            attachedImage
+                              ? 'text-[#D4A88C] bg-[#F0E0D0]'
+                              : 'text-[#8A6B54]/60 hover:text-[#8A6B54] hover:bg-[#F0E0D0]'
+                          }`}
+                          aria-label="Bild anhängen"
+                        >
+                          <Paperclip className="w-4 h-4" />
+                        </button>
+                        {/* Send button */}
+                        <button
+                          type="submit"
+                          disabled={(!inputValue.trim() && !attachedImage) || isLoading}
+                          className="w-9 h-9 bg-[#D4A88C] hover:bg-[#C9997A] text-white rounded-lg flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <Send className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                   {error && <p className="text-xs text-red-500 mt-2 text-center">{error}</p>}
                 </form>
               </div>
-
             </div>
           </section>
-
         </div>
       </main>
     </div>

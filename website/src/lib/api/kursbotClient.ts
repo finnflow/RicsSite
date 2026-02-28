@@ -8,6 +8,13 @@ export interface ChatRequest {
   conversationId?: string | null
 }
 
+export interface ImageChatRequest {
+  message: string
+  guestId: string
+  conversationId?: string | null
+  image: File
+}
+
 export interface ChatSource {
   path: string
   snippet?: string
@@ -92,6 +99,33 @@ export async function sendChatMessage(payload: ChatRequest): Promise<ChatRespons
   })
 
   return handleJsonResponse<ChatResponse>(response)
+}
+
+// Send a message with an optional image attachment via multipart/form-data
+export async function sendImageMessage(payload: ImageChatRequest): Promise<ChatResponse> {
+  const baseUrl = getBaseUrl()
+
+  const form = new FormData()
+  form.append('message', payload.message)
+  form.append('guestId', payload.guestId)
+  if (payload.conversationId) {
+    form.append('conversationId', payload.conversationId)
+  }
+  form.append('image', payload.image)
+
+  const response = await fetch(`${baseUrl}/api/v1/chat/image`, {
+    method: 'POST',
+    // No Content-Type header — browser sets it automatically including the multipart boundary
+    body: form,
+  })
+
+  return handleJsonResponse<ChatResponse>(response)
+}
+
+// Resolve a backend image path to an absolute URL for display
+export function resolveImageUrl(imagePath: string): string {
+  if (imagePath.startsWith('http')) return imagePath
+  return `${getBaseUrl()}${imagePath}`
 }
 
 // ---------------------------------------------------------------------------
