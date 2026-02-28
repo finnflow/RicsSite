@@ -1,11 +1,12 @@
 import { Header } from '@/app/components/Header'
-import { Send, Plus, MoreVertical } from 'lucide-react'
+import { Send, Plus, MoreVertical, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import {
   sendChatMessage,
   fetchConversations,
   fetchConversationMessages,
+  deleteConversation,
   type ConversationApiItem,
 } from '@/lib/api/kursbotClient'
 
@@ -43,6 +44,9 @@ export default function Kursbot() {
 
   const [isLoadingMessages, setIsLoadingMessages] = useState(false)
   const [messagesError, setMessagesError] = useState<string | null>(null)
+
+  const [deletingConversationId, setDeletingConversationId] = useState<string | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   // guestId einmalig beim Mount initialisieren
   useEffect(() => {
@@ -82,7 +86,6 @@ export default function Kursbot() {
     e.preventDefault()
     if (!inputValue.trim() || !guestId || isLoading) return
 
-    // Optimistisch: User-Nachricht sofort anzeigen
     const userMessage: Message = {
       id: Date.now().toString(),
       content: inputValue,
@@ -136,7 +139,6 @@ export default function Kursbot() {
 
     fetchConversationMessages(id, guestId)
       .then((res) => {
-        // Messages nach created_at sortieren (älteste zuerst)
         const sorted = [...(res.messages ?? [])].sort((a, b) => {
           const da = new Date(a.created_at).getTime()
           const db = new Date(b.created_at).getTime()
@@ -168,6 +170,38 @@ export default function Kursbot() {
     setMessages([])
     setMessagesError(null)
     setError(null)
+  }
+
+  const handleDeleteConversation = (id: string) => {
+    if (!guestId) return
+
+    // Soft Confirm: User muss das Löschen explizit bestätigen
+    const confirmed = window.confirm(
+      'Möchtest du dieses Gespräch wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.',
+    )
+    if (!confirmed) return
+
+    setDeletingConversationId(id)
+    setDeleteError(null)
+
+    deleteConversation(id, guestId)
+      .then(() => {
+        setConversations((prev) => prev.filter((c) => c.id !== id))
+
+        if (conversationId === id) {
+          setConversationId(null)
+          setMessages([])
+          setMessagesError(null)
+          setError(null)
+        }
+      })
+      .catch((err: unknown) => {
+        console.error('[Kursbot] deleteConversation error:', err)
+        setDeleteError('Das Gespräch konnte nicht gelöscht werden. Bitte versuch es später erneut.')
+      })
+      .finally(() => {
+        setDeletingConversationId(null)
+      })
   }
 
   const isConversationSelected = (id: string | undefined) =>
@@ -226,24 +260,43 @@ export default function Kursbot() {
                 }
 
                 const selected = isConversationSelected(conv.id)
+                const isDeleting = deletingConversationId === conv.id
 
                 return (
-                  <button
+                  <div
                     key={conv.id}
-                    type="button"
-                    onClick={() => handleSelectConversation(conv)}
-                    className={`w-full text-left px-3 py-2 rounded-2xl hover:bg-[#F6E8DE] ${
-                      selected ? 'bg-[#F6E8DE]' : ''
+                    className={`flex items-center gap-2 w-full px-3 py-2 rounded-2xl ${
+                      selected ? 'bg-[#F6E8DE]' : 'hover:bg-[#F6E8DE]'
                     }`}
                   >
-                    <p className="text-sm font-medium text-[#3A2A21] truncate">
-                      {conv.title || 'Gespräch'}
-                    </p>
-                    {timestamp && <p className="text-xs text-gray-500">{timestamp}</p>}
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectConversation(conv)}
+                      className="flex-1 text-left"
+                    >
+                      <p className="text-sm font-medium text-[#3A2A21] truncate">
+                        {conv.title || 'Gespräch'}
+                      </p>
+                      {timestamp && <p className="text-xs text-gray-500">{timestamp}</p>}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteConversation(conv.id)
+                      }}
+                      disabled={isDeleting}
+                      className="p-1 rounded-full hover:bg-[#F6E8DE] text-[#8A6B54] disabled:opacity-50"
+                      aria-label="Gespräch löschen"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 )
               })}
             </div>
+
+            {deleteError && <p className="mt-2 text-xs text-red-600 text-center">{deleteError}</p>}
 
             <p className="mt-4 text-[11px] text-gray-400 text-center">
               © Lebensessenzen | Ricarda Ludwig
