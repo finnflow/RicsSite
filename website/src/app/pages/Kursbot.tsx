@@ -1,8 +1,12 @@
 import { Header } from '@/app/components/Header'
 import { Send, Plus, MoreVertical } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { sendChatMessage } from '@/lib/api/kursbotClient'
+import {
+  sendChatMessage,
+  fetchConversations,
+  type ConversationApiItem,
+} from '@/lib/api/kursbotClient'
 
 interface Message {
   id: string
@@ -11,18 +15,12 @@ interface Message {
   timestamp: Date
 }
 
-interface ChatHistory {
-  id: string
-  title: string
-  preview: string
-  timestamp: string
-}
-
 const GUEST_ID_KEY = 'lebensessenz_guest_id'
 
 function getOrCreateGuestId(): string {
   const existing = localStorage.getItem(GUEST_ID_KEY)
   if (existing) return existing
+
   const newId = crypto.randomUUID()
   localStorage.setItem(GUEST_ID_KEY, newId)
   return newId
@@ -30,6 +28,7 @@ function getOrCreateGuestId(): string {
 
 export default function Kursbot() {
   const navigate = useNavigate()
+
   const [guestId, setGuestId] = useState<string | null>(null)
   const [conversationId, setConversationId] = useState<string | null>(null)
   const [inputValue, setInputValue] = useState('')
@@ -37,51 +36,56 @@ export default function Kursbot() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Initialise guestId once on mount
+  const [conversations, setConversations] = useState<ConversationApiItem[]>([])
+  const [isLoadingConversations, setIsLoadingConversations] = useState(false)
+  const [conversationsError, setConversationsError] = useState<string | null>(null)
+
+  // guestId einmalig beim Mount initialisieren
   useEffect(() => {
     setGuestId(getOrCreateGuestId())
   }, [])
 
-  // Demo chat history (UI-only, not wired to backend)
-  const chatHistory: ChatHistory[] = [
-    {
-      id: '1',
-      title: 'Was kann ich gut mit Linsen kom...',
-      preview: 'Vor 1d',
-      timestamp: 'Vor 1d',
-    },
-    {
-      id: '2',
-      title: 'Ich will morgen gegen 9:00 train...',
-      preview: 'Vor 1d',
-      timestamp: 'Vor 1d',
-    },
-    {
-      id: '3',
-      title: 'Gib mir ein Gericht, auf dem Tre...',
-      preview: 'Vor 1d',
-      timestamp: 'Vor 1d',
-    },
-    { id: '4', title: 'wie gehts?', preview: 'Vor 1d', timestamp: 'Vor 1d' },
-    {
-      id: '5',
-      title: 'und gib mir noch einmal die Erkl...',
-      preview: 'Vor 1d',
-      timestamp: 'Vor 1d',
-    },
-  ]
+  // Conversations laden, sobald guestId verfügbar ist
+  useEffect(() => {
+    if (!guestId) return
+
+    let cancelled = false
+
+    setIsLoadingConversations(true)
+    setConversationsError(null)
+
+    fetchConversations(guestId)
+      .then((res) => {
+        if (cancelled) return
+        setConversations(res.conversations ?? [])
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return
+        console.error('[Kursbot] fetchConversations error:', err)
+        setConversationsError('Die bisherigen Gespräche konnten nicht geladen werden.')
+      })
+      .finally(() => {
+        if (cancelled) return
+        setIsLoadingConversations(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [guestId])
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault()
     if (!inputValue.trim() || !guestId || isLoading) return
 
-    // Optimistic: show user message immediately
+    // Optimistisch: User-Nachricht sofort anzeigen
     const userMessage: Message = {
       id: Date.now().toString(),
       content: inputValue,
       isBot: false,
       timestamp: new Date(),
     }
+
     setMessages((prev) => [...prev, userMessage])
 
     const currentInput = inputValue
@@ -89,7 +93,11 @@ export default function Kursbot() {
     setIsLoading(true)
     setError(null)
 
-    sendChatMessage({ message: currentInput, guestId, conversationId })
+    sendChatMessage({
+      message: currentInput,
+      guestId,
+      conversationId,
+    })
       .then((response) => {
         setConversationId(response.conversationId)
         setMessages((prev) => [
@@ -112,122 +120,125 @@ export default function Kursbot() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-[#F7F3EF] flex flex-col">
       <Header />
-
-      <main className="pt-20 flex-1 flex">
-        <div className="flex w-full max-w-[1800px] mx-auto">
+      <main className="flex-1">
+        <div className="max-w-6xl mx-auto px-4 py-8 lg:flex lg:gap-8">
           {/* Sidebar – Chat History (Desktop only) */}
-          <aside className="hidden lg:flex w-64 border-r border-gray-200 bg-[#FBF8F3] flex-col">
-            <div className="p-4 border-b border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-medium text-gray-900">Lebensessenzen</h2>
-                <button className="text-gray-600 hover:text-gray-900">
-                  <MoreVertical className="w-5 h-5" />
-                </button>
-              </div>
-              <button className="w-full bg-[#C9B5A0] hover:bg-[#B8A490] text-white py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors">
-                <Plus className="w-4 h-4" />
-                <span className="text-sm">Neuer Chat</span>
+          <aside className="hidden lg:flex lg:w-72 lg:flex-col border border-[#E2D4C8] rounded-3xl bg-white/80 p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-[#3A2A21]">Lebensessenzen</h2>
+              <button
+                type="button"
+                className="p-1 rounded-full hover:bg-[#F6E8DE] text-[#8A6B54]"
+                aria-label="Weitere Optionen"
+              >
+                <MoreVertical className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-3">
-              <div className="space-y-2">
-                {chatHistory.map((chat) => (
+            <button
+              type="button"
+              className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-2xl bg-[#D4A88C] text-white text-sm font-medium hover:bg-[#C9997A] transition-colors"
+              // Klick-Verhalten für "Neuer Chat" kommt in einem späteren Schritt
+            >
+              <Plus className="w-4 h-4" />
+              <span>Neuer Chat</span>
+            </button>
+
+            <div className="mt-4 flex-1 overflow-y-auto space-y-1">
+              {isLoadingConversations && (
+                <p className="text-sm text-gray-500">Lade frühere Gespräche…</p>
+              )}
+
+              {conversationsError && <p className="text-sm text-red-600">{conversationsError}</p>}
+
+              {!isLoadingConversations && !conversationsError && conversations.length === 0 && (
+                <p className="text-sm text-gray-500">Noch keine Gespräche vorhanden.</p>
+              )}
+
+              {conversations.map((conv) => {
+                const dateStr = conv.updated_at ?? conv.created_at
+                let timestamp = ''
+
+                if (dateStr) {
+                  const d = new Date(dateStr)
+                  if (!Number.isNaN(d.getTime())) {
+                    timestamp = d.toLocaleString('de-DE', {
+                      dateStyle: 'short',
+                      timeStyle: 'short',
+                    })
+                  }
+                }
+
+                return (
                   <div
-                    key={chat.id}
-                    className="p-3 rounded-xl hover:bg-white/60 cursor-pointer transition-colors"
+                    key={conv.id}
+                    className="w-full text-left px-3 py-2 rounded-2xl hover:bg-[#F6E8DE] cursor-default"
                   >
-                    <p className="text-sm text-gray-900 truncate mb-1">{chat.title}</p>
-                    <p className="text-xs text-gray-500">{chat.timestamp}</p>
+                    <p className="text-sm font-medium text-[#3A2A21] truncate">
+                      {conv.title || 'Gespräch'}
+                    </p>
+                    {timestamp && <p className="text-xs text-gray-500">{timestamp}</p>}
                   </div>
-                ))}
-              </div>
+                )
+              })}
             </div>
 
-            <div className="p-4 border-t border-gray-200 text-center">
-              <p className="text-xs text-gray-500">© Lebensessenzen | Ricarda Ludwig</p>
-            </div>
+            <p className="mt-4 text-[11px] text-gray-400 text-center">
+              © Lebensessenzen | Ricarda Ludwig
+            </p>
           </aside>
 
           {/* Main Chat Area */}
-          <div className="flex-1 flex flex-col bg-white">
+          <section className="flex-1 mt-6 lg:mt-0">
             {/* Chat Header */}
-            <div className="border-b border-gray-200 p-4 lg:p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-xl lg:text-2xl font-medium text-gray-900">Kursbot</h1>
-                  <p className="text-sm text-gray-600 mt-1">Stelle deine Fragen zum Kursmaterial</p>
-                </div>
-                <button
-                  onClick={() => navigate('/kundenbereich')}
-                  className="text-sm text-[#D4A88C] hover:text-[#C9997A] transition-colors"
-                >
-                  Zurück zum Kundenbereich
-                </button>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h1 className="text-2xl font-semibold text-[#3A2A21]">Kursbot</h1>
+                <p className="text-sm text-gray-600">Stelle deine Fragen zum Kursmaterial</p>
               </div>
+              <button
+                type="button"
+                onClick={() => navigate('/kundenbereich')}
+                className="text-sm text-[#D4A88C] hover:text-[#C9997A] transition-colors"
+              >
+                Zurück zum Kundenbereich
+              </button>
             </div>
 
-            {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 lg:p-8">
-              {messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-6">
-                    <svg
-                      className="w-8 h-8 text-gray-400"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                      />
-                    </svg>
+            <div className="bg-white/80 rounded-3xl border border-[#E2D4C8] p-4 flex flex-col h-[60vh]">
+              {/* Messages Area */}
+              <div className="flex-1 overflow-y-auto space-y-3">
+                {messages.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-center text-gray-500 px-8">
+                    <h2 className="text-lg font-medium mb-2">Starte eine Konversation</h2>
+                    <p className="text-sm">
+                      Stelle eine Frage zum Kursmaterial und ich helfe dir gerne weiter.
+                    </p>
                   </div>
-                  <h2 className="text-2xl text-gray-900 mb-3">Starte eine Konversation</h2>
-                  <p className="text-gray-600 max-w-md">
-                    Stelle eine Frage zum Kursmaterial und ich helfe dir gerne weiter.
-                  </p>
-                </div>
-              ) : (
-                <div className="max-w-3xl mx-auto space-y-6">
-                  {messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex ${message.isBot ? 'justify-start' : 'justify-end'}`}
-                    >
+                ) : (
+                  <>
+                    {messages.map((message) => (
                       <div
-                        className={`max-w-[80%] rounded-2xl px-6 py-4 ${
+                        key={message.id}
+                        className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${
                           message.isBot
-                            ? 'bg-gradient-to-br from-[#F5EDE4] to-[#FAF3EC] text-gray-900'
-                            : 'bg-[#D4A88C] text-white'
+                            ? 'bg-[#F6E8DE] text-[#3A2A21] self-start'
+                            : 'bg-[#D4A88C] text-white self-end ml-auto'
                         }`}
                       >
-                        <p className="text-sm lg:text-base leading-relaxed">{message.content}</p>
+                        {message.content}
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                    {isLoading && <div className="mt-2 text-xs text-gray-500">Bot denkt…</div>}
+                  </>
+                )}
+              </div>
 
-                  {/* Loading indicator */}
-                  {isLoading && (
-                    <div className="flex justify-start">
-                      <div className="bg-gradient-to-br from-[#F5EDE4] to-[#FAF3EC] rounded-2xl px-6 py-4">
-                        <p className="text-sm text-gray-500 italic">Bot denkt…</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Input Area */}
-            <div className="border-t border-gray-200 p-4 lg:p-6 bg-white">
-              <form onSubmit={handleSendMessage} className="max-w-4xl mx-auto">
-                <div className="flex gap-3 items-end">
+              {/* Input Area */}
+              <form onSubmit={handleSendMessage} className="mt-4">
+                <div className="flex items-end gap-3">
                   <div className="flex-1 relative">
                     <textarea
                       value={inputValue}
@@ -252,12 +263,10 @@ export default function Kursbot() {
                     <Send className="w-5 h-5" />
                   </button>
                 </div>
-
-                {/* Error banner */}
                 {error && <p className="text-sm text-red-600 mt-3 text-center">{error}</p>}
               </form>
             </div>
-          </div>
+          </section>
         </div>
       </main>
     </div>
